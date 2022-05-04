@@ -1,34 +1,71 @@
 const { response } = require("express");
+const bcrypt = require("bcryptjs");
 
-const usersGet = (req, res = response) => {
-  const params = req.query;
+const User = require("../models/User");
+const { validEmail } = require("../helpers/db-validator");
+
+const usersGet = async (req, res = response) => {
+  // params for pagination
+  const { limit = 5, from = 0 } = req.query;
+  const query = { state: true };
+
+  // Execute booth promises at the same time
+  const [total, users] = await Promise.all([
+    // Get count of users
+    User.countDocuments(query),
+    // Get all users with limits
+    User.find(query).limit(limit).skip(from),
+  ]);
 
   res.json({
-    msg: "Get API - Controller",
-    params,
+    total,
+    users,
   });
 };
 
-const usersPost = (req, res = response) => {
-  const body = req.body;
+const usersPost = async (req, res = response) => {
+  const { nombre, email, password, role = "USER_ROLE", img } = req.body;
+  const user = new User({ nombre, email, password, role, img });
+
+  // Encrypt password
+  const salt = bcrypt.genSaltSync();
+  user.password = bcrypt.hashSync(password, salt);
+
+  // Save in DB
+  await user.save();
 
   res.json({
-    msg: "Post API - Controller",
-    body,
+    user,
   });
 };
 
-const usersPut = (req, res = response) => {
+const usersPut = async (req, res = response) => {
+  const id = req.params.id;
+  const { _id, password, google, role, ...rest } = req.body;
+
+  if (password) {
+    // Encrypt password
+    const salt = bcrypt.genSaltSync();
+    rest.password = bcrypt.hashSync(password, salt);
+  }
+
+  const userDB = await User.findByIdAndUpdate(id, rest);
+
+  res.json({
+    userDB,
+  });
+};
+
+const usersDelete = async (req, res = response) => {
   const id = req.params.id;
 
-  res.json({
-    msg: "Put API - Controller",
-    id,
-  });
-};
+  // delete permanent from  db
+  // const userDelete = await User.findByIdAndDelete(id);
 
-const usersDelete = (req, res = response) => {
-  res.json({ msg: "Delete API - Controller" });
+  // change state in DB
+  const userDelete = await User.findByIdAndUpdate(id, { state: false });
+
+  res.json({ userDelete });
 };
 
 module.exports = {
