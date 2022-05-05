@@ -59,13 +59,11 @@ const usersPut = async (req, res = response) => {
 const usersDelete = async (req, res = response) => {
   const id = req.params.id;
 
-  // delete permanent from  db
-  // const userDelete = await User.findByIdAndDelete(id);
-
   // change state in DB
   const userDelete = await User.findByIdAndUpdate(id, { state: false });
+  const authenticateUser = req.user;
 
-  res.json({ userDelete });
+  res.json({ userDelete, authenticateUser });
 };
 
 module.exports = {
