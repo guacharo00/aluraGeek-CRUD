@@ -43,10 +43,21 @@ const validateProductDB = async (id) => {
   }
 };
 
+// Validate i collection exist
+const validCollections = (collection = "", collections = []) => {
+  const included = collections.includes(collection);
+  if (!included) {
+    throw new Error(`Collection ${collection}, is not registered`);
+  }
+
+  return true;
+};
+
 module.exports = {
   validRole,
   validEmail,
   validateUserDB,
   validateCategoryDB,
   validateProductDB,
+  validCollections,
 };
